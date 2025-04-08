@@ -22,6 +22,7 @@ This solver:
 - `mad_4.bff`: Input configuration file specifying grid, block types, lazors, and targets.
 - `solution_output.txt`: Output file containing the solution grid, lazor path, and hit status for targets.
 - `lazor_log_YYYYMMDD_HHMMSS.txt`: Runtime log file capturing lazor simulation details.
+- `test_lazor_solver.py`: Unit test suite for core lazor logic functions.
 
 ## How to Use
 
@@ -39,6 +40,24 @@ The solution file includes:
 - A text-based grid showing where blocks were placed.
 - A list of all coordinates traversed by the lazor.
 - The status (HIT or MISS) of each target point.
+
+## Unit Testing
+
+To verify the core logic of the lazor solver, a suite of unit tests is included in `test_lazor_solver.py`.
+
+### Run Tests
+
+Run the unit tests using the command:
+```bash
+python -m unittest test_lazor_solver.py
+```
+
+This will test:
+- Block edge detection
+- Beam interaction logic with block types
+- Target hit validation
+- Open position detection
+- Correct block placement on the grid
 
 ## Customization
 
