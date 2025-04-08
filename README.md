@@ -1,96 +1,57 @@
-# Lazor Solver – EN.540.635 Software Carpentry Project
+# Lazor Puzzle Solver
 
-This repository contains a Python solver for the mobile puzzle game [Lazors](https://play.google.com/store/apps/details?id=net.pyrosphere.lazors). The solver reads `.bff` level files, places blocks using brute-force search, and simulates lazor paths with accurate physics to determine valid solutions.
+The **Lazor Puzzle Solver** is a Python program designed to solve laser reflection puzzles by simulating the paths of laser beams (lazors) through a configurable grid. The goal is to determine a placement of blocks that allows the lazors to hit all target points.
 
----
+## Overview
 
-## Project Overview
+This solver:
+- Parses puzzle configurations from `.bff` files.
+- Simulates lazor beam paths using directional logic and block interaction behavior.
+- Attempts to solve the puzzle by testing permutations of block placements.
+- Outputs a solution grid and lazor path if a solution is found.
 
-**Course**: EN.540.635 – Software Carpentry  
-**Semester**: Spring 2025  
-**Instructors**: F. Shaikh, A. Roy  
-**Contributors**: Chun-Chiao  
+## Block Types
 
----
+- **A (Reflective)**: Reflects the lazor.
+- **B (Opaque)**: Absorbs and stops the lazor.
+- **C (Splitter)**: Splits the lazor into two — one continues straight, and the other reflects.
 
-## Files Included
+## Files
 
-| File                      | Description                                  |
-|---------------------------|----------------------------------------------|
-| `lazor_solver_final.py`   | Main solver script (edge-based interactions) |
-| `mad_1.bff`               | Sample input puzzle file                     |
-| `solution.txt`            | Output solution of block placement           |
-| `README.md`               | This documentation                          |
-
----
+- `LazorProjectv3`: The main script implementing the lazor logic, puzzle parsing, and solving.
+- `mad_4.bff`: Input configuration file specifying grid, block types, lazors, and targets.
+- `solution_output.txt`: Output file containing the solution grid, lazor path, and hit status for targets.
+- `lazor_log_YYYYMMDD_HHMMSS.txt`: Runtime log file capturing lazor simulation details.
 
 ## How to Use
 
-### 1. Install Python
+1. Ensure Python 3 is installed.
+2. Place the `.bff` file (e.g. `mad_4.bff`) in the working directory.
+3. Run the script:
+   ```bash
+   python LazorProjectv3
+   ```
+4. The script will attempt to solve the puzzle and write the results to `solution_output.txt`.
 
-Make sure you have **Python 3.7+** installed.
+## Output
 
-### 2. Clone the Repository
+The solution file includes:
+- A text-based grid showing where blocks were placed.
+- A list of all coordinates traversed by the lazor.
+- The status (HIT or MISS) of each target point.
 
-```bash
-git clone https://github.com/<your-username>/lazor-solver.git
-cd lazor-solver
-```
+## Customization
 
-### 3. Run the Solver
-
-The script is set to solve `mad_1.bff` by default:
-
-```bash
-python lazor_solver_final.py
-```
-
-It will output the solution in a file called `solution.txt`.
-
----
-
-## Example Output
-
-A solved board may look like:
-
-```
-A . . .
-C . A .
-. . . .
-. . . .
-```
-
-Each letter represents a block:
-- `A` = Reflect block
-- `B` = Opaque block (not used in this example)
-- `C` = Refract block
-- `.` = Empty cell
-
----
-
-## Unit Tests
-
-Run basic unit tests with:
-
-```bash
-python lazor_solver_final.py unittest
-```
-
----
-
-## Notes
-
-- The script uses a brute-force search and may take several seconds for larger boards.
-- Block interactions follow the Lazors game's edge-based physics: lazors reflect/refract when crossing a block edge, not the center.
-
----
+You can modify or create `.bff` files with custom puzzles. Each file should include:
+- A grid definition with `x` for fixed blocks and `o` for open positions.
+- Counts of movable blocks.
+- Lazor start points and directions.
+- Target points.
 
 ## License
 
-MIT License – feel free to use and modify for educational purposes.
+This project is provided for educational and puzzle-solving purposes.
 
 ---
 
-## Contact
-
-For issues or collaboration, reach out via GitHub or [add your contact info here].
+Created as part of EN.540.635 Software Carpentry (JHU).
