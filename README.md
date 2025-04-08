@@ -18,7 +18,7 @@ This solver:
 
 ## Files
 
-- `LazorProjectv3`: The main script implementing the lazor logic, puzzle parsing, and solving.
+- `LazorProjectv4`: The main script implementing the lazor logic, puzzle parsing, and solving.
 - `mad_4.bff`: Input configuration file specifying grid, block types, lazors, and targets.
 - `solution_output.txt`: Output file containing the solution grid, lazor path, and hit status for targets.
 - `lazor_log_YYYYMMDD_HHMMSS.txt`: Runtime log file capturing lazor simulation details.
