@@ -9,7 +9,7 @@ This repository contains a Python solver for the mobile puzzle game [Lazors](htt
 **Course**: EN.540.635 – Software Carpentry  
 **Semester**: Spring 2025  
 **Instructors**: F. Shaikh, A. Roy  
-**Contributors**: _[Your Name Here]_  
+**Contributors**: Chun-Chiao  
 
 ---
 
@@ -18,7 +18,7 @@ This repository contains a Python solver for the mobile puzzle game [Lazors](htt
 | File                      | Description                                  |
 |---------------------------|----------------------------------------------|
 | `lazor_solver_final.py`   | Main solver script (edge-based interactions) |
-| `mad_4.bff`               | Sample input puzzle file                     |
+| `mad_1.bff`               | Sample input puzzle file                     |
 | `solution.txt`            | Output solution of block placement           |
 | `README.md`               | This documentation                          |
 
@@ -39,7 +39,7 @@ cd lazor-solver
 
 ### 3. Run the Solver
 
-The script is set to solve `mad_4.bff` by default:
+The script is set to solve `mad_1.bff` by default:
 
 ```bash
 python lazor_solver_final.py
