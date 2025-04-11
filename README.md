@@ -18,7 +18,7 @@ This repository contains a Python implementation of a **Lazors puzzle solver**, 
 
 | File | Description |
 |------|-------------|
-| `LazorProjectv6_commented_full.py` | Main script for parsing, simulating, and solving Lazors puzzles |
+| `LazorProjectv6.py` | Main script for parsing, simulating, and solving Lazors puzzles |
 | `test_lazor_solver.py` | Unit tests for logic and utilities |
 | `solution_output.txt` | Output file (created when a solution is found) |
 | `lazor_log_*.txt` | Log file created with every run |
@@ -42,7 +42,7 @@ Put your `.bff` file (like `tiny_5.bff`) in the root folder.
 ### 2. Run the Solver
 
 ```bash
-python LazorProjectv6_commented_full.py
+python LazorProjectv6.py
 ```
 
 If a solution is found:
