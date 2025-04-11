@@ -1,0 +1,248 @@
+import datetime
+import sys
+import itertools
+import copy
+from collections import defaultdict
+
+
+class Block:
+    def __init__(self, block_type):
+        self.block_type = block_type
+
+
+def get_block_interaction_edge_directional(edge_type, block_type, direction):
+    dx, dy = direction
+    if block_type == 'A':
+        if edge_type == 'horizontal':
+            return [(dx, -dy)]
+        elif edge_type == 'vertical':
+            return [(-dx, dy)]
+    elif block_type == 'B':
+        return []
+    elif block_type == 'C':
+        if edge_type == 'horizontal':
+            return [direction, (dx, -dy)]
+        elif edge_type == 'vertical':
+            return [direction, (-dx, dy)]
+    return [direction]
+
+
+def simulate_lazor_with_directional_logic(grid, lazors):
+    active = list(lazors)
+    path = set()
+    visited = set()
+    inside_blocks = set()
+    height, width = len(grid), len(grid[0])
+
+    while active:
+        pos, direction = active.pop()
+        key = (pos, direction)
+        if key in visited:
+            continue
+        visited.add(key)
+
+        while 0 <= pos[0] <= width * 2 and 0 <= pos[1] <= height * 2:
+            path.add(pos)
+            next_pos = (pos[0] + direction[0], pos[1] + direction[1])
+
+            x_range = range(max((pos[0] // 2) - 1, 0), min((pos[0] // 2) + 2, width))
+            y_range = range(max((pos[1] // 2) - 1, 0), min((pos[1] // 2) + 2, height))
+
+            for y in y_range:
+                for x in x_range:
+                    block = grid[y][x]
+                    if isinstance(block, Block):
+                        edges = get_block_edges(x, y)
+                        for side, coord in edges.items():
+                            if coord == pos:
+                                if side == 'top' and direction[1] > 0:
+                                    entering = True
+                                elif side == 'bottom' and direction[1] < 0:
+                                    entering = True
+                                elif side == 'left' and direction[0] > 0:
+                                    entering = True
+                                elif side == 'right' and direction[0] < 0:
+                                    entering = True
+                                else:
+                                    entering = False
+
+                                if not entering:
+                                    continue
+
+                                if (x, y, direction) in inside_blocks:
+                                    continue
+
+                                edge_type = 'horizontal' if side in ['top', 'bottom'] else 'vertical'
+                                new_dirs = get_block_interaction_edge_directional(edge_type, block.block_type, direction)
+                                inside_blocks.add((x, y, direction))
+
+                                for new_direction in new_dirs[1:]:
+                                    alt_next = (pos[0] + new_direction[0], pos[1] + new_direction[1])
+                                    active.append((alt_next, new_direction))
+
+                                if new_dirs:
+                                    direction = new_dirs[0]
+                                    next_pos = (pos[0] + direction[0], pos[1] + direction[1])
+                                else:
+                                    next_pos = None
+                                break
+                        else:
+                            continue
+                        break
+            if next_pos is None:
+                break
+            pos = next_pos
+            if (pos, direction) in visited:
+                break
+            visited.add((pos, direction))
+
+    return path
+
+
+def get_block_edges(x, y):
+    center_x, center_y = x * 2 + 1, y * 2 + 1
+    return {
+        'top': (center_x, center_y - 1),
+        'bottom': (center_x, center_y + 1),
+        'left': (center_x - 1, center_y),
+        'right': (center_x + 1, center_y)
+    }
+
+
+def parse_bff(filename):
+    with open(filename, 'r') as f:
+        lines = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+
+    grid = []
+    blocks = {'A': 0, 'B': 0, 'C': 0}
+    lazors = []
+    points = []
+
+    i = 0
+    while i < len(lines):
+        if lines[i] == "GRID START":
+            i += 1
+            while lines[i] != "GRID STOP":
+                row = lines[i].split()
+                grid.append([
+                    None if ch == 'x'
+                    else Block(ch) if ch in ['A', 'B', 'C']
+                    else ch for ch in row
+                ])
+                i += 1
+        elif lines[i][0] in ['A', 'B', 'C'] and lines[i][1] == ' ':
+            typ, count = lines[i].split()
+            blocks[typ] = int(count)
+        elif lines[i].startswith('L'):
+            _, x, y, dx, dy = lines[i].split()
+            lazors.append(((int(x), int(y)), (int(dx), int(dy))))
+        elif lines[i].startswith('P'):
+            _, x, y = lines[i].split()
+            points.append((int(x), int(y)))
+        i += 1
+
+    return grid, blocks, lazors, points
+
+
+def place_blocks(grid, block_positions, block_types):
+    new_grid = copy.deepcopy(grid)
+    for (x, y), block_type in zip(block_positions, block_types):
+        new_grid[y][x] = Block(block_type)
+    return new_grid
+
+
+def find_open_positions(grid):
+    return [(x, y) for y in range(len(grid))
+            for x in range(len(grid[0])) if grid[y][x] == 'o']
+
+
+def check_targets_hit(path, targets):
+    return all(p in path for p in targets)
+
+
+def solve_with_permutations(grid, blocks, lazors, targets):
+    open_positions = find_open_positions(grid)
+
+    block_list = (
+        ['A'] * blocks['A'] +
+        ['B'] * blocks['B'] +
+        ['C'] * blocks['C']
+    )
+
+    tried_configs = set()
+
+    if len(block_list) > len(open_positions):
+        return None, None
+
+    for positions in itertools.combinations(open_positions, len(block_list)):
+        perms = itertools.permutations(block_list)
+        seen_types = set()
+        for types in perms:
+            if types in seen_types:
+                continue
+            seen_types.add(types)
+            key = tuple(sorted(zip(positions, types)))
+            if key in tried_configs:
+                continue
+            tried_configs.add(key)
+
+            test_grid = place_blocks(grid, positions, types)
+            path = simulate_lazor_with_directional_logic(test_grid, lazors)
+            if check_targets_hit(path, targets):
+                return test_grid, path
+
+    return None, None
+
+
+log_filename = f"lazor_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+sys.stdout = open(log_filename, "w")
+print("Log started for Lazor solver")
+
+if __name__ == "__main__":
+    bff_file = "mad_7.bff"
+    grid, block_counts, lazors, targets = parse_bff(bff_file)
+
+    print("Initial Grid Layout:")
+    for row in grid:
+        line = ' '.join(
+            cell.block_type if isinstance(cell, Block)
+            else 'o' if cell == 'o'
+            else 'x' if cell is None
+            else cell
+            for cell in row
+        )
+        print(line)
+
+    print("\nAvailable Blocks:", block_counts)
+    print("Lazors:", lazors)
+    print("Targets:", targets)
+
+    solution_grid, solution_path = solve_with_permutations(
+        grid, block_counts, lazors, targets)
+
+    if solution_grid:
+        print("\nSolution found! Lazor path:")
+        for p in solution_path:
+            print(p)
+
+        with open("solution_output.txt", "w") as f:
+            f.write("Solution Grid (block layout):\n")
+            for row in solution_grid:
+                line = ' '.join(
+                    cell.block_type if isinstance(cell, Block)
+                    else 'o' if cell == 'o'
+                    else 'x' for cell in row)
+                f.write(line + "\n")
+
+            f.write("\nLazor Path:\n")
+            for p in solution_path:
+                f.write(f"{p}\n")
+
+            f.write("\nTarget Points Hit:\n")
+            for t in targets:
+                status = 'HIT' if t in solution_path else 'MISS'
+                f.write(f"{t} - {status}\n")
+
+        print("\nSolution written to solution_output.txt")
+    else:
+        print("\nNo solution found.")
