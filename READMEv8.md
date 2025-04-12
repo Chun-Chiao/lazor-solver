@@ -24,7 +24,16 @@ Lazors Puzzle Solver is a Python-based program that solves the Lazors puzzle by 
 - **Unit Testing:**  
   Comes with a comprehensive set of unit tests for key components, ensuring that edge calculations, block interactions, grid configuration, and simulation behavior work as expected.
 
+<<<<<<< HEAD
 ## Repository Structure
+=======
+| File | Description |
+|------|-------------|
+| `LazorProjectv6.py` | Main script for parsing, simulating, and solving Lazors puzzles |
+| `test_lazor_solver.py` | Unit tests for logic and utilities |
+| `solution_output.txt` | Output file (created when a solution is found) |
+| `lazor_log_*.txt` | Log file created with every run |
+>>>>>>> 42790863c85031c8e605a7f94572d0c068557620
 
 ```
 ├── lazor_solver.py       # Main solver script
@@ -53,7 +62,11 @@ cd lazors-puzzle-solver
 To run the solver with a `.bff` configuration file (e.g., `yarn_5.bff`), execute:
 
 ```bash
+<<<<<<< HEAD
 python lazor_solver.py
+=======
+python LazorProjectv6.py
+>>>>>>> 42790863c85031c8e605a7f94572d0c068557620
 ```
 
 This will:
