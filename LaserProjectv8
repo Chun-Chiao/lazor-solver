@@ -1,3 +1,24 @@
+"""
+Lazors Puzzle Solver
+
+This script parses `.bff` puzzle configuration files and solves the Lazors game by simulating
+laser beam paths and placing interactive blocks (reflective, refractive, or opaque) to hit target points.
+
+Main Features:
+- Lazor beam physics simulation with interaction on blocks
+- Block placement permutations to explore possible puzzle solutions
+- Parses .bff files containing grid, block, lazor, and target data
+- Logs lazor paths and results to text files
+
+Block types:
+- 'A': Reflective — reflects the beam
+- 'B': Opaque — blocks the beam
+- 'C': Refractive — splits the beam (passes through and reflects)
+
+Author: Original Author
+Enhanced with documentation by ChatGPT
+"""
+
 import datetime
 import sys
 import itertools
@@ -6,100 +27,47 @@ from collections import defaultdict
 
 
 class Block:
+    """A class representing a lazor-interactive block on the grid."""
     def __init__(self, block_type):
         self.block_type = block_type
+        
+    def __repr__(self):
+        # When printed, show the block type only.
+        return self.block_type
 
 
 def get_block_interaction_edge_directional(edge_type, block_type, direction):
+    """
+    Determine how a lazor beam interacts with a block depending on the type and entry edge.
+
+    Args:
+        edge_type (str): 'horizontal' or 'vertical' edge where the lazor enters.
+        block_type (str): Type of block ('A', 'B', 'C').
+        direction (tuple): Lazor direction as (dx, dy).
+
+    Returns:
+        list: A list of direction tuples representing the new lazor directions.
+    """
     dx, dy = direction
     if block_type == 'A':
-        if edge_type == 'horizontal':
-            return [(dx, -dy)]
-        elif edge_type == 'vertical':
-            return [(-dx, dy)]
+        return [(dx, -dy)] if edge_type == 'horizontal' else [(-dx, dy)]
     elif block_type == 'B':
-        return []
+        return []  # lazor is absorbed
     elif block_type == 'C':
         if edge_type == 'horizontal':
             return [direction, (dx, -dy)]
         elif edge_type == 'vertical':
             return [direction, (-dx, dy)]
-    return [direction]
-
-
-def simulate_lazor_with_directional_logic(grid, lazors):
-    active = list(lazors)
-    path = set()
-    visited = set()
-    inside_blocks = set()
-    height, width = len(grid), len(grid[0])
-
-    while active:
-        pos, direction = active.pop()
-        key = (pos, direction)
-        if key in visited:
-            continue
-        visited.add(key)
-
-        while 0 <= pos[0] <= width * 2 and 0 <= pos[1] <= height * 2:
-            path.add(pos)
-            next_pos = (pos[0] + direction[0], pos[1] + direction[1])
-
-            x_range = range(max((pos[0] // 2) - 1, 0), min((pos[0] // 2) + 2, width))
-            y_range = range(max((pos[1] // 2) - 1, 0), min((pos[1] // 2) + 2, height))
-
-            for y in y_range:
-                for x in x_range:
-                    block = grid[y][x]
-                    if isinstance(block, Block):
-                        edges = get_block_edges(x, y)
-                        for side, coord in edges.items():
-                            if coord == pos:
-                                if side == 'top' and direction[1] > 0:
-                                    entering = True
-                                elif side == 'bottom' and direction[1] < 0:
-                                    entering = True
-                                elif side == 'left' and direction[0] > 0:
-                                    entering = True
-                                elif side == 'right' and direction[0] < 0:
-                                    entering = True
-                                else:
-                                    entering = False
-
-                                if not entering:
-                                    continue
-
-                                if (x, y, direction) in inside_blocks:
-                                    continue
-
-                                edge_type = 'horizontal' if side in ['top', 'bottom'] else 'vertical'
-                                new_dirs = get_block_interaction_edge_directional(edge_type, block.block_type, direction)
-                                inside_blocks.add((x, y, direction))
-
-                                for new_direction in new_dirs[1:]:
-                                    alt_next = (pos[0] + new_direction[0], pos[1] + new_direction[1])
-                                    active.append((alt_next, new_direction))
-
-                                if new_dirs:
-                                    direction = new_dirs[0]
-                                    next_pos = (pos[0] + direction[0], pos[1] + direction[1])
-                                else:
-                                    next_pos = None
-                                break
-                        else:
-                            continue
-                        break
-            if next_pos is None:
-                break
-            pos = next_pos
-            if (pos, direction) in visited:
-                break
-            visited.add((pos, direction))
-
-    return path
+    return [direction]  # default: continue
 
 
 def get_block_edges(x, y):
+    """
+    Get the edge coordinates of a block at grid (x, y).
+
+    Returns:
+        dict: Mapping of 'top', 'bottom', 'left', 'right' to coordinate tuples.
+    """
     center_x, center_y = x * 2 + 1, y * 2 + 1
     return {
         'top': (center_x, center_y - 1),
@@ -109,7 +77,127 @@ def get_block_edges(x, y):
     }
 
 
+def print_grid(grid):
+    """Print the grid configuration in a clean 2D layout."""
+    print("Block placement:")
+    for row in grid:
+        line = ' '.join(
+            cell.block_type if isinstance(cell, Block)
+            else 'o' if cell == 'o'
+            else 'x' if cell is None
+            else str(cell)
+            for cell in row
+        )
+        print(line)
+
+
+def simulate_lazor_with_directional_logic(grid, lazors):
+    """
+    Simulates the lazor movement across the grid while logging the
+    configuration if a beam segment repeats too many times.
+    """
+    active = list(lazors)
+    path = set()
+    visited = set()
+    inside_blocks = set()
+    height, width = len(grid), len(grid[0])
+    repetition_counter = {}  # Dictionary to track repeated beam segments
+    repetition_threshold = 10  # Adjust threshold as needed
+
+    while active:
+        pos, direction = active.pop()
+        key = (pos, direction)
+        
+        if key in visited:
+            # Increase the repetition counter for this beam segment
+            repetition_counter[key] = repetition_counter.get(key, 0) + 1
+            if repetition_counter[key] > repetition_threshold:
+                print("Repeated beam segment detected at position", pos, "with direction", direction)
+                print("Current grid configuration:")
+                print_grid(grid)
+                # Optionally break or return for further analysis:
+                return path
+            continue
+        visited.add(key)
+        
+        while 0 <= pos[0] <= width * 2 and 0 <= pos[1] <= height * 2:
+            path.add(pos)
+            next_pos = (pos[0] + direction[0], pos[1] + direction[1])
+            
+            # Determine the neighboring grid indices (adjusted for the finer coordinate scale)
+            x_range = range(max((pos[0] // 2) - 1, 0), min((pos[0] // 2) + 2, width))
+            y_range = range(max((pos[1] // 2) - 1, 0), min((pos[1] // 2) + 2, height))
+            collision_found = False
+            
+            for y in y_range:
+                for x in x_range:
+                    block = grid[y][x]
+                    if isinstance(block, Block):
+                        edges = get_block_edges(x, y)
+                        for side, coord in edges.items():
+                            if coord == pos:
+                                entering = (
+                                    (side == 'top' and direction[1] > 0) or
+                                    (side == 'bottom' and direction[1] < 0) or
+                                    (side == 'left' and direction[0] > 0) or
+                                    (side == 'right' and direction[0] < 0)
+                                )
+                                if not entering:
+                                    continue
+                                
+                                # Create a key including the specific edge (side) to track interactions uniquely.
+                                interaction_key = (x, y, side, direction)
+                                if interaction_key in inside_blocks:
+                                    continue
+                                
+                                print(f"Beam at {pos} collides with block {block.block_type} at ({x}, {y}) on side '{side}'")
+                                edge_type = 'horizontal' if side in ['top', 'bottom'] else 'vertical'
+                                new_dirs = get_block_interaction_edge_directional(edge_type, block.block_type, direction)
+                                
+                                inside_blocks.add(interaction_key)
+                                for new_direction in new_dirs[1:]:
+                                    alt_next = (pos[0] + new_direction[0], pos[1] + new_direction[1])
+                                    active.append((alt_next, new_direction))
+                                    print(f"Adding branch at {alt_next} with direction {new_direction}")
+                                
+                                if new_dirs:
+                                    direction = new_dirs[0]
+                                    next_pos = (pos[0] + direction[0], pos[1] + direction[1])
+                                    print(f"Beam changes to direction {direction}, next position {next_pos}")
+                                else:
+                                    print("Beam absorbed by block")
+                                    next_pos = None
+                                
+                                collision_found = True
+                                break
+                        if collision_found:
+                            break
+                if collision_found:
+                    break
+            
+            if next_pos is None:
+                break
+            
+            pos = next_pos
+            
+            # If the beam segment (position, direction) has already been visited, break out.
+            if (pos, direction) in visited:
+                break
+            visited.add((pos, direction))
+    
+    return path
+
+
 def parse_bff(filename):
+    """
+    Parses a .bff file and extracts grid, block info, lazors, and target points.
+
+    Args:
+        filename (str): Path to the .bff file.
+
+    Returns:
+        tuple: (grid, blocks dict, lazors list, target points list)
+    """
     with open(filename, 'r') as f:
         lines = [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
@@ -145,6 +233,17 @@ def parse_bff(filename):
 
 
 def place_blocks(grid, block_positions, block_types):
+    """
+    Places blocks of given types at specified positions on a new grid.
+
+    Args:
+        grid (list of lists): Original grid.
+        block_positions (list): Positions where blocks are placed.
+        block_types (list): Block types corresponding to each position.
+
+    Returns:
+        list: New grid with blocks placed.
+    """
     new_grid = copy.deepcopy(grid)
     for (x, y), block_type in zip(block_positions, block_types):
         new_grid[y][x] = Block(block_type)
@@ -152,28 +251,42 @@ def place_blocks(grid, block_positions, block_types):
 
 
 def find_open_positions(grid):
+    """
+    Find all open positions ('o') on the grid.
+
+    Args:
+        grid (list of lists): Lazor grid.
+
+    Returns:
+        list: List of (x, y) tuples for all open positions.
+    """
     return [(x, y) for y in range(len(grid))
             for x in range(len(grid[0])) if grid[y][x] == 'o']
 
 
 def check_targets_hit(path, targets):
+    """
+    Check whether all targets were hit by the lazor path.
+
+    Args:
+        path (set): Set of coordinates lazor has passed through.
+        targets (list): List of target coordinates.
+
+    Returns:
+        bool: True if all targets are hit, False otherwise.
+    """
     return all(p in path for p in targets)
 
 
 def solve_with_permutations(grid, blocks, lazors, targets):
     open_positions = find_open_positions(grid)
-
-    block_list = (
-        ['A'] * blocks['A'] +
-        ['B'] * blocks['B'] +
-        ['C'] * blocks['C']
-    )
-
+    block_list = ['A'] * blocks['A'] + ['B'] * blocks['B'] + ['C'] * blocks['C']
     tried_configs = set()
 
     if len(block_list) > len(open_positions):
         return None, None
 
+    config_counter = 0
     for positions in itertools.combinations(open_positions, len(block_list)):
         perms = itertools.permutations(block_list)
         seen_types = set()
@@ -185,21 +298,26 @@ def solve_with_permutations(grid, blocks, lazors, targets):
             if key in tried_configs:
                 continue
             tried_configs.add(key)
-
+            config_counter += 1
+            print(f"Trying configuration #{config_counter}: {key}")
+            # Create a grid with this block placement:
             test_grid = place_blocks(grid, positions, types)
+            print("Block placement:")
+            print_grid(test_grid)
             path = simulate_lazor_with_directional_logic(test_grid, lazors)
             if check_targets_hit(path, targets):
                 return test_grid, path
-
     return None, None
 
 
+# Logging lazor solver session
 log_filename = f"lazor_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 sys.stdout = open(log_filename, "w")
 print("Log started for Lazor solver")
 
+
 if __name__ == "__main__":
-    bff_file = "mad_7.bff"
+    bff_file = "yarn_5.bff"
     grid, block_counts, lazors, targets = parse_bff(bff_file)
 
     print("Initial Grid Layout:")
@@ -208,7 +326,7 @@ if __name__ == "__main__":
             cell.block_type if isinstance(cell, Block)
             else 'o' if cell == 'o'
             else 'x' if cell is None
-            else cell
+            else str(cell)
             for cell in row
         )
         print(line)
