@@ -29,8 +29,8 @@ Lazors Puzzle Solver is a Python-based program that solves the Lazors puzzle by 
 =======
 | File | Description |
 |------|-------------|
-| `LazorProjectv6.py` | Main script for parsing, simulating, and solving Lazors puzzles |
-| `test_lazor_solver.py` | Unit tests for logic and utilities |
+| `LazorProjectv8.py` | Main script for parsing, simulating, and solving Lazors puzzles |
+| `test_lazors.py` | Unit tests for logic and utilities |
 | `solution_output.txt` | Output file (created when a solution is found) |
 | `lazor_log_*.txt` | Log file created with every run |
 >>>>>>> 42790863c85031c8e605a7f94572d0c068557620
